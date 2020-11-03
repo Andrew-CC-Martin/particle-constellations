@@ -1,9 +1,3 @@
-// constants
-const STARS_COUNT = 50
-const THICKNESS_FACTOR = 500
-const THICKNESS_MAX = 1
-const OPACITY_FACTOR = 100
-
 // Create our PIXI webgl canvas and add it to DOM
 let app = new PIXI.Application({
   height: window.innerHeight,
@@ -12,28 +6,42 @@ let app = new PIXI.Application({
 document.body.appendChild(app.view)
 
 // Create the main stage for your display objects
-var stage = new PIXI.Container()
+const stage = new PIXI.Container()
 
-// Create the initial states for each star
-const stars = []
-for (let i = 0; i < STARS_COUNT; i++) {
-  // get star position
-  const x = Math.random() * window.innerWidth
-  const y = Math.random() * window.innerHeight
-  const vx = Math.random() * (Math.round(Math.random()) ? 1 : -1)
-  const vy = Math.random() * (Math.round(Math.random()) ? 1 : -1)
-  const colour = `0x${Math.floor(Math.random()*16777215).toString(16)}`
-  stars.push({
-    x,
-    y,
-    vx,
-    vy,
-    colour,
-  })
+let stars
+let starCount
+
+const THICKNESS_FACTOR = 500
+const THICKNESS_MAX = 1
+const OPACITY_FACTOR = 100
+
+function setStarState() {
+  // constants
+  const starSlider = document.getElementById("stars")
+  starCount = Number(starSlider.value)
+
+  stars = []
+  // Create the initial states for each star
+  for (let i = 0; i < starCount; i++) {
+    // get star position
+    const x = Math.random() * window.innerWidth
+    const y = Math.random() * window.innerHeight
+    const vx = Math.random() * (Math.round(Math.random()) ? 1 : -1)
+    const vy = Math.random() * (Math.round(Math.random()) ? 1 : -1)
+    const colour = `0x${Math.floor(Math.random() * 16777215).toString(16)}`
+    stars.push({
+      x,
+      y,
+      vx,
+      vy,
+      colour,
+    })
+  }
 }
 
+setStarState()
 // Initialise the pixi Graphics class
-var graphics = new PIXI.Graphics()
+const graphics = new PIXI.Graphics()
 
 // Add the graphics to the stage
 stage.addChild(graphics)
@@ -45,7 +53,7 @@ function animate() {
   graphics.clear()
 
   // Update the positions for each star
-  for (let i = 0; i < STARS_COUNT; i++) {
+  for (let i = 0; i < starCount; i++) {
     // Get new position (current position + velocity)
     const newX = stars[i].x + stars[i].vx
     const newY = stars[i].y + stars[i].vy
@@ -64,8 +72,8 @@ function animate() {
   }
 
   // Draw the lines between the stars
-  for (let i = 0; i < STARS_COUNT; i++) {
-    for (let j = 0; j < STARS_COUNT; j++) {
+  for (let i = 0; i < starCount; i++) {
+    for (let j = 0; j < starCount; j++) {
       // No need for star to check against self
       if (i === j) {
         break
@@ -74,19 +82,23 @@ function animate() {
       const distanceY = stars[i].y - stars[j].y
       const distance = ((distanceY ** 2) + (distanceX ** 2)) ** 0.5
 
-        // draw line from (stars[i].x, stars[i].y) to (stars[j].x, stars[j].y)
-        const opacity = OPACITY_FACTOR / distance
-        const thicknessCalculated = (THICKNESS_FACTOR / distance)
-        const thickness = thicknessCalculated > THICKNESS_MAX ? THICKNESS_MAX : thicknessCalculated
+      // draw line from (stars[i].x, stars[i].y) to (stars[j].x, stars[j].y)
+      const opacity = OPACITY_FACTOR / distance
+      const thicknessCalculated = (THICKNESS_FACTOR / distance)
+      const thickness = thicknessCalculated > THICKNESS_MAX ? THICKNESS_MAX : thicknessCalculated
 
-        // Draw the line (endPoint should be relative to myGraph's position)
-        graphics.lineStyle(thickness, stars[i].colour, opacity)
-                .moveTo(stars[i].x, stars[i].y)
-                .lineTo(stars[j].x, stars[j].y)
+      // Draw the line (endPoint should be relative to myGraph's position)
+      graphics.lineStyle(thickness, stars[i].colour, opacity)
+        .moveTo(stars[i].x, stars[i].y)
+        .lineTo(stars[j].x, stars[j].y)
     }
   }
 
   //Render the stage
   app.renderer.render(stage)
   requestAnimationFrame(animate)
+}
+
+function hideSlider() {
+  document.getElementById("slider").innerHTML = ''
 }

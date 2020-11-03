@@ -1,12 +1,23 @@
 <!doctype html>
 <html>
+
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Particle Constellations</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <script src="pixi.min.js"></script>
+  <main>
+    <div id="slider">
+      <button type="button" onclick="hideSlider()">hide</button>
+      <label for="stars">Number of stars</label>
+      <input onchange="setStarState()" type="range" id="stars" name="stars" min="0" max="100">
+    </div>
+  </main>
   <script src="index.js"></script>
 </body>
+
 </html>
