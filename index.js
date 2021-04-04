@@ -1,101 +1,107 @@
-// Create our PIXI webgl canvas and add it to DOM
-let app = new PIXI.Application({
-  height: window.innerHeight,
-  width: window.innerWidth,
-})
-document.body.appendChild(app.view)
-
-// Create the main stage for your display objects
-const stage = new PIXI.Container()
-
-let stars
-let starCount
-
+// constants
 const THICKNESS_FACTOR = 500
 const THICKNESS_MAX = 1
 const OPACITY_FACTOR = 100
+const JOIN_DISTANCE = 200
+const MOUSE_INTERACTION_RADIUS = 100
 
-function setStarState() {
-  // constants
-  const starSlider = document.getElementById("stars")
-  starCount = Number(starSlider.value)
+const canvas = document.getElementById("canvas")
+const ctx = canvas.getContext('2d')
+const height = window.innerHeight
+const width = window.innerWidth
+canvas.width = width
+canvas.height = height
 
-  stars = []
-  // Create the initial states for each star
-  for (let i = 0; i < starCount; i++) {
-    // get star position
-    const x = Math.random() * window.innerWidth
-    const y = Math.random() * window.innerHeight
+// state
+let particles
+let particleCount
+
+function setParticleState() {
+  const slider = document.getElementById("particles")
+  particleCount = Number(slider.value)
+
+  particles = []
+  // Create the initial states for each particle
+  for (let i = 0; i < particleCount; i++) {
+    // get particle position
+    const x = Math.random() * width
+    const y = Math.random() * height
     const vx = Math.random() * (Math.round(Math.random()) ? 1 : -1)
     const vy = Math.random() * (Math.round(Math.random()) ? 1 : -1)
-    const colour = `0x${Math.floor(Math.random() * 16777215).toString(16)}`
-    stars.push({
+    particles.push({
       x,
       y,
       vx,
       vy,
-      colour,
     })
   }
 }
+setParticleState()
 
-setStarState()
-// Initialise the pixi Graphics class
-const graphics = new PIXI.Graphics()
-
-// Add the graphics to the stage
-stage.addChild(graphics)
-
-// Start animating
+// Start animation loop
 animate()
+
+// animation loop
 function animate() {
   // Wipe the canvas clear before each animation frame
-  graphics.clear()
+  ctx.clearRect(0, 0, width, height)
 
-  // Update the positions for each star
-  for (let i = 0; i < starCount; i++) {
+  // Update the positions for each particle
+  for (let i = 0; i < particleCount; i++) {
     // Get new position (current position + velocity)
-    const newX = stars[i].x + stars[i].vx
-    const newY = stars[i].y + stars[i].vy
+    const newX = particles[i].x + particles[i].vx
+    const newY = particles[i].y + particles[i].vy
 
     // Detect collisions with edges of screen
     // If collision, reverse velocity
     if ((newX < 0) || (newX > window.innerWidth)) {
-      stars[i].vx = -stars[i].vx
+      particles[i].vx = -particles[i].vx
     }
     if ((newY < 0) || (newY > window.innerHeight)) {
-      stars[i].vy = -stars[i].vy
+      particles[i].vy = -particles[i].vy
     }
 
-    stars[i].y = stars[i].y + stars[i].vy
-    stars[i].x = stars[i].x + stars[i].vx
+    // update postions based on velocities
+    particles[i].y = particles[i].y + particles[i].vy
+    particles[i].x = particles[i].x + particles[i].vx
   }
 
-  // Draw the lines between the stars
-  for (let i = 0; i < starCount; i++) {
-    for (let j = 0; j < starCount; j++) {
-      // No need for star to check against self
+  // Draw the lines between the particles
+  for (let i = 0; i < particleCount; i++) {
+    for (let j = 0; j < particleCount; j++) {
+      // No need for particle to check against self
       if (i === j) {
         break
       }
-      const distanceX = stars[i].x - stars[j].x
-      const distanceY = stars[i].y - stars[j].y
+      const distanceX = particles[i].x - particles[j].x
+      const distanceY = particles[i].y - particles[j].y
       const distance = ((distanceY ** 2) + (distanceX ** 2)) ** 0.5
 
-      // draw line from (stars[i].x, stars[i].y) to (stars[j].x, stars[j].y)
-      const opacity = OPACITY_FACTOR / distance
-      const thicknessCalculated = (THICKNESS_FACTOR / distance)
-      const thickness = thicknessCalculated > THICKNESS_MAX ? THICKNESS_MAX : thicknessCalculated
+      // check if particle is close. Only draw line if distance is within limit
+      if (distance < JOIN_DISTANCE) {
+        // opactity of line increases when particles are closer
+        const opacity = OPACITY_FACTOR / distance
+        // thickness of line increases when particles are closer together
+        const thicknessCalculated = (THICKNESS_FACTOR / distance)
+        // but only up to a max value
+        const thickness = thicknessCalculated > THICKNESS_MAX ? THICKNESS_MAX : thicknessCalculated
 
-      // Draw the line (endPoint should be relative to myGraph's position)
-      graphics.lineStyle(thickness, stars[i].colour, opacity)
-        .moveTo(stars[i].x, stars[i].y)
-        .lineTo(stars[j].x, stars[j].y)
+        // set the stroke style based on the above factors
+        // opacity
+        ctx.strokeStyle = `rgb(255, 255, 255, ${opacity})`
+        // thickness
+        ctx.lineWidth = thickness
+
+        // draw line between particles
+        ctx.beginPath()
+        ctx.moveTo(particles[i].x, particles[i].y)
+        ctx.lineTo(particles[j].x, particles[j].y)
+        ctx.stroke()
+      }
     }
   }
 
-  //Render the stage
-  app.renderer.render(stage)
+  // run the animation loop again when the browser's ready
   requestAnimationFrame(animate)
 }
 

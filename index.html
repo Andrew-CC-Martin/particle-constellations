@@ -9,13 +9,13 @@
 </head>
 
 <body>
-  <script src="pixi.min.js"></script>
   <main>
     <div id="slider">
       <button type="button" onclick="hideSlider()">hide</button>
-      <label for="stars">Number of stars</label>
-      <input onchange="setStarState()" type="range" id="stars" name="stars" min="0" max="100">
+      <label for="particles">Number of particles</label>
+      <input onchange="setParticleState()" type="range" id="particles" name="particles" min="0" max="100">
     </div>
+    <canvas id="canvas"></canvas>
   </main>
   <script src="index.js"></script>
 </body>
