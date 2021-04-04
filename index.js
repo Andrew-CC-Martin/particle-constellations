@@ -4,12 +4,28 @@ const constants = {
   THICKNESS_MAX: 1,
   OPACITY_FACTOR: 100,
   JOIN_DISTANCE: 200,
-  // MOUSE_INTERACTION_RADIUS: 100,
+  MOUSE_REPEL_FACTOR: 1000,
   PARTICLE_COUNT: 50
 }
 
+// to do - manage this state in a pure functional way
+let mouseX = 1
+let mouseY = 1
+let isAttracting = false
+
 function initializeState(constants) {
   const canvas = document.getElementById("canvas")
+  canvas.addEventListener('mousemove', e => {
+    mouseX = e.offsetX
+    mouseY = e.offsetY
+  })
+  canvas.addEventListener('mousedown', e => {
+    isAttracting = true
+  })
+  canvas.addEventListener('mouseup', e => {
+    isAttracting = false
+  })
+
   const ctx = canvas.getContext('2d')
   const height = window.innerHeight
   const width = window.innerWidth
@@ -33,7 +49,8 @@ function initializeState(constants) {
     // randomise particle position
     const x = Math.random() * width
     const y = Math.random() * height
-    // randomise particle velocity
+    // randomise particle velocity (random no between -1 and 1)
+    // eg v of 1 means "1 pixel per animation frame", or "60px/sec"
     const vx = Math.random() * (Math.round(Math.random()) ? 1 : -1)
     const vy = Math.random() * (Math.round(Math.random()) ? 1 : -1)
     state.particles.push({
@@ -49,18 +66,62 @@ function initializeState(constants) {
 
 function generateNewState(oldState) {
   const { particles, constants, canvasProps } = oldState
-  const { PARTICLE_COUNT } = constants
+  const { PARTICLE_COUNT, MOUSE_REPEL_FACTOR, JOIN_DISTANCE } = constants
   const newState = { particles: [], constants, canvasProps }
   // Update the positions for each particle
   for (let i = 0; i < PARTICLE_COUNT; i++) {
+    let newVx = particles[i].vx
+    let newVy = particles[i].vy
+
+    // calculate mouse pointer interactions
+    // todo - extract mouse interactions into a separate function
+    // first determine distance from mouse
+    const Dx = mouseX - particles[i].x
+    const Dy = mouseY - particles[i].y
+    const distance = ((Dx ** 2) + (Dy ** 2)) ** 0.5
+
+    // Only do mouse interactions if distance within range
+    if (distance < JOIN_DISTANCE) {
+      // use distance to determine the repel force
+      let Fx = MOUSE_REPEL_FACTOR / (Dx ** 2)
+      let Fy = MOUSE_REPEL_FACTOR / (Dy ** 2)
+      // set the force to negative if the mouse is to the right/below the particle
+      if (Dx > 0) {
+        Fx = -Fx
+      }
+      if (Dy > 0) {
+        Fy = -Fy
+      }
+      if (isAttracting) {
+        Fy = -Fy
+        Fx = -Fx
+      }
+
+      // update velocity based on force exerted by mouse pointer
+      newVx += Fx
+      // but cap it at velocity of 1
+      if (newVx > 1) {
+        newVx = 1.0
+      }
+      if (newVx < -1) {
+        newVx = -1.0
+      }
+      newVy += Fy
+      if (newVy > 1) {
+        newVy = 1.0
+      }
+      if (newVy < -1) {
+        newVy = -1.0
+      }
+    }
+
     // Get new position (current position + velocity)
     const calculatedX = particles[i].x + particles[i].vx
     const calculatedY = particles[i].y + particles[i].vy
 
     // Detect collisions with edges of screen
     // If collision, reverse velocity
-    let newVx = particles[i].vx
-    let newVy = particles[i].vy
+
     // collision with left and right edges
     if ((calculatedX < 0) || (calculatedX > window.innerWidth)) {
       // particles[i].vx = -particles[i].vx
