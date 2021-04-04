@@ -1,6 +1,4 @@
 # particle-constellations
-Project to create a funky little animation with JavaScript.
-
-Uses [PixiJS library](https://www.pixijs.com/), which is using webgl under the hood. If the browser doesn't have webgl supported, it'll use a regular canvas instead. The only real difference is that you'll lose graphics card support.
+Project to create a funky little animation with JavaScript, using the canvas API.
 
 Deployment can be found [here](https://infallible-kalam-8963f3.netlify.app/)

@@ -1,74 +1,101 @@
 // constants
-const THICKNESS_FACTOR = 500
-const THICKNESS_MAX = 1
-const OPACITY_FACTOR = 100
-const JOIN_DISTANCE = 200
-const MOUSE_INTERACTION_RADIUS = 100
+const constants = {
+  THICKNESS_FACTOR: 500,
+  THICKNESS_MAX: 1,
+  OPACITY_FACTOR: 100,
+  JOIN_DISTANCE: 200,
+  // MOUSE_INTERACTION_RADIUS: 100,
+  PARTICLE_COUNT: 50
+}
 
-const canvas = document.getElementById("canvas")
-const ctx = canvas.getContext('2d')
-const height = window.innerHeight
-const width = window.innerWidth
-canvas.width = width
-canvas.height = height
+function initializeState(constants) {
+  const canvas = document.getElementById("canvas")
+  const ctx = canvas.getContext('2d')
+  const height = window.innerHeight
+  const width = window.innerWidth
+  canvas.width = width
+  canvas.height = height
 
-// state
-let particles
-let particleCount
+  const state = {
+    particles: [],
+    constants,
+    canvasProps: {
+      canvas,
+      ctx,
+      height,
+      width
+    }
+  }
 
-function setParticleState() {
-  const slider = document.getElementById("particles")
-  particleCount = Number(slider.value)
-
-  particles = []
+  const { PARTICLE_COUNT } = constants
   // Create the initial states for each particle
-  for (let i = 0; i < particleCount; i++) {
-    // get particle position
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    // randomise particle position
     const x = Math.random() * width
     const y = Math.random() * height
+    // randomise particle velocity
     const vx = Math.random() * (Math.round(Math.random()) ? 1 : -1)
     const vy = Math.random() * (Math.round(Math.random()) ? 1 : -1)
-    particles.push({
+    state.particles.push({
       x,
       y,
       vx,
       vy,
     })
   }
+
+  return state
 }
-setParticleState()
 
-// Start animation loop
-animate()
-
-// animation loop
-function animate() {
-  // Wipe the canvas clear before each animation frame
-  ctx.clearRect(0, 0, width, height)
-
+function generateNewState(oldState) {
+  const { particles, constants, canvasProps } = oldState
+  const { PARTICLE_COUNT } = constants
+  const newState = { particles: [], constants, canvasProps }
   // Update the positions for each particle
-  for (let i = 0; i < particleCount; i++) {
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
     // Get new position (current position + velocity)
-    const newX = particles[i].x + particles[i].vx
-    const newY = particles[i].y + particles[i].vy
+    const calculatedX = particles[i].x + particles[i].vx
+    const calculatedY = particles[i].y + particles[i].vy
 
     // Detect collisions with edges of screen
     // If collision, reverse velocity
-    if ((newX < 0) || (newX > window.innerWidth)) {
-      particles[i].vx = -particles[i].vx
+    let newVx = particles[i].vx
+    let newVy = particles[i].vy
+    // collision with left and right edges
+    if ((calculatedX < 0) || (calculatedX > window.innerWidth)) {
+      // particles[i].vx = -particles[i].vx
+      newVx = -particles[i].vx
     }
-    if ((newY < 0) || (newY > window.innerHeight)) {
-      particles[i].vy = -particles[i].vy
+    // collision with top and bottom edges
+    if ((calculatedY < 0) || (calculatedY > window.innerHeight)) {
+      // particles[i].vy = -particles[i].vy
+      newVy = -particles[i].vy
     }
 
     // update postions based on velocities
-    particles[i].y = particles[i].y + particles[i].vy
-    particles[i].x = particles[i].x + particles[i].vx
+    const newX = particles[i].x + newVx
+    const newY = particles[i].y + newVy
+    newState.particles.push({
+      x: newX,
+      y: newY,
+      vx: newVx,
+      vy: newVy
+    })
   }
 
+  return newState
+}
+
+function drawLines(state) {
+  const { particles, constants, canvasProps } = state
+  const { PARTICLE_COUNT, JOIN_DISTANCE, OPACITY_FACTOR, THICKNESS_FACTOR, THICKNESS_MAX } = constants
+  const { ctx, width, height } = canvasProps
+  // Wipe the canvas clear before each animation frame
+  ctx.clearRect(0, 0, width, height)
+
   // Draw the lines between the particles
-  for (let i = 0; i < particleCount; i++) {
-    for (let j = 0; j < particleCount; j++) {
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    for (let j = 0; j < PARTICLE_COUNT; j++) {
       // No need for particle to check against self
       if (i === j) {
         break
@@ -100,11 +127,18 @@ function animate() {
       }
     }
   }
+}
+
+// animation loop
+function animate(oldState) {
+  const newState = generateNewState(oldState)
+
+  drawLines(newState)
 
   // run the animation loop again when the browser's ready
-  requestAnimationFrame(animate)
+  requestAnimationFrame(() => animate(newState))
 }
 
-function hideSlider() {
-  document.getElementById("slider").innerHTML = ''
-}
+// Create initial state and start animation loop
+const state = initializeState(constants)
+animate(state)
